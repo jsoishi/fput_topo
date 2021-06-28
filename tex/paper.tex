@@ -1,0 +1,78 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage[letterpaper, centering, top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{times}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{xcolor}             % Colors
+\usepackage[bookmarks,colorlinks,breaklinks]{hyperref}  % PDF
+\usepackage{makecell}
+\urlstyle{same}
+\hypersetup{
+  colorlinks,
+  linkcolor=red,
+  urlcolor=olive
+}
+\title{Minimal Models for Topological Protection}
+\begin{document}
+\maketitle
+
+\section{Fluid Models}
+\label{sec:fluids}
+
+\subsection{2D Isothermal Acoustic Waves in a Rotating Medium}
+\label{sec:2D_isotherm}
+Isomorphic to 2D $f$-plane shallow water model.
+
+\subsection{1D Isothermal Acoustic Waves in a Stratified Background}
+\label{sec:1d_acoustic_grav}
+Consider
+\begin{align}
+  \label{eq:1d_start}
+  \partial_t \left(\rho w \right) + \partial_z \left(\rho w w \right) &= -\partial_z p - \rho g\\
+  \partial_t \rho + \partial_z \left( \rho w \right) &= 0.
+\end{align}
+If we split into $\rho = \rho_0 + \rho_1$ and $w = w_0 + w_1$, and further assume $w_0 = 0$, then we can get 
+\begin{align}
+  \label{eq:1d_step_1}
+  \rho_0 (1+\epsilon) \left(\partial_t w_1 + w_1 \partial_z w_1 \right) &= -\partial_z \left(p_0 + p_1\right) - \rho_0 (1+\epsilon) g\\
+  \partial_t \rho_1 + \partial_z \left( \rho_0 w_1 \right) &= 0,
+\end{align}
+where $\epsilon = \rho_1/\rho_0$ and is not necessarily small yet.
+Let's also linearize and separate the momentum equation into zeroth and first order contributions
+\begin{align}
+    \partial_z p_0 &= -\rho_0 g.\label{eq:1d_step_2_order0}\\
+  \rho_0 (1+\epsilon) \partial_t w_1  &= -\partial_z p_1 - \rho_1 g   \label{eq:1d_step_2}
+\end{align}
+Invoking isothermality, $p = c_s^2 \rho$, we can solve equation~(\ref{eq:1d_step_2_order0}) to arrive at $\rho_0 = \rho_r e^{-z/H}$ with the scale height $H = c_s^2/g$.
+
+From here, we can assume $\epsilon \ll 1$, and use the Boussinesq/small density amplitude approximation: $(1+\epsilon) \to 1$, but terms of order $\epsilon$ must stick around.
+\begin{align}
+  \partial_t w_1 +\frac{c_s^2}{\rho_0} \partial_z \rho_1 + \frac{\rho_1}{\rho_0} g &= 0 \label{eq:1d_final_mom}\\
+  \partial_t \rho_1 + \frac{\rho_0 g}{c_s^2} w_1 + \rho_0 \partial_z w_1  &= 0.\label{eq:1d_final_density}
+\end{align}
+
+Weirdly, this leads to a non-Hermitian system with always complex $\omega$...not quite sure where the problem comes it, but it may not be self-consistent?
+
+
+\subsubsection{Questions}
+\label{sec:acoustic_questions}
+
+\begin{enumerate}
+\item What are the four bands when non-isothermal and gravity waves/Lamb waves are present? Is it 1 gravity band, one Lamb band, and two acoustic bands?
+\item What happens in the case of gravity waves in general? Is there topological protection?
+\item What about a background with a sharp edge? How does this connect to K-H?
+\end{enumerate}
+
+\subsection{1D Isothermal Acoustic Waves with a General Drag Force }
+\label{sec:1D_acoustic_drag}
+
+
+
+\subsection{1D Pressureless, Rotating Fluid }
+\label{sec:1d_pressureless}
+
+Not a PDE
+
+
+\end{document}
