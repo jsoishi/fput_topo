@@ -71,7 +71,7 @@ Weirdly, this leads to a non-Hermitian system with always complex $\omega$...not
 \subsection{1D Isothermal Acoustic Waves with a General Drag Force }
 \label{sec:1D_acoustic_drag}
 
-
+Not Hermitian.
 
 \subsection{2D Pressureless, Rotating Fluid }
 \label{sec:1d_pressureless}
@@ -101,6 +101,7 @@ where $\ket{x}$ is a vector of reals and $\mathcal{H}$ is a linear operator, the
 If in fact it always is, then the proof is complete: all two-band classical systems have trivial topology.
 Thus, the Delplace system is the minimum because it is three-band.
 There is a reason to think this might be the case: orthogonal matrices represent inner product preserving transformations. For non-dissipative Hamiltonian wave systems, the typical inner product is the energy inner product, which of course is preserved under time evolution since energy itself is manifestly consered.
+Furthermore, special orthogonal matrices are rotations, and it is very tempting to identify the cycle between kinetic and potential energies in waves as being represented as rotations in the appropriate basis.
 Thus, it's not crazy to think that the operators in 2-band real systems would be $SO(2)$!
 
 Alas, this proof appears to be flawed at the first step because it's immediately obvious that if we use a purely real representation of the wave ansatz (equation~(\ref{eq:reals})), we don't have an eigenvalue problem in the first place.
@@ -162,4 +163,12 @@ but transform $\ket{\psi} \to (\ket{\psi} + \ket{\psi}^*)/2$, what happens?
 Does the Berry phase go to zero?
 If it does, then this is an interesting indication of a possible direction.
 In this case, the idea is that maybe the operators $\mathbf{H}$ that are allowed when we require a real state vector are some subgroup of $SU(2)$ that has some property that forbids non-zero Berry phase.
+A vote of confidence for this idea comes from the fact that complex conjugation is not a linear operation: the mere act of adding the CC to the wave function cannot be expressed as a linear operator on the original state: things could really be different here.
+
+\subsection{Real systems as a subgroup of $SU(2)$?}
+\label{sec:real_subgroup}
+
+As a kind of really speculative idea, is it possible that while the real systems cannot (obviously) be identified with $SO(2)$, perhaps they do for a subgroup of $SU(2)$ that does also has zero Berry phase.
+This feels like it could be quite technical to show or invalidate.
+
 \end{document}
