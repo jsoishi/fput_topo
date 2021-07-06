@@ -4,6 +4,7 @@
 \usepackage{times}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{braket}
 \usepackage{xcolor}             % Colors
 \usepackage[bookmarks,colorlinks,breaklinks]{hyperref}  % PDF
 \usepackage{makecell}
@@ -13,6 +14,9 @@
   linkcolor=red,
   urlcolor=olive
 }
+
+
+\newcommand{\Hilbert}[1]{\mathcal{H}\!\left[#1\right]\!}
 \title{Minimal Models for Topological Protection}
 \begin{document}
 \maketitle
@@ -69,10 +73,93 @@ Weirdly, this leads to a non-Hermitian system with always complex $\omega$...not
 
 
 
-\subsection{1D Pressureless, Rotating Fluid }
+\subsection{2D Pressureless, Rotating Fluid }
 \label{sec:1d_pressureless}
 
-Not a PDE
+Not a PDE!
 
+\section{Ideas for proof}
+\label{sec:proof_ideas}
 
+\subsection{Isomorphism to $U(1)$}
+\label{sec:u1_iso}
+
+It is well known that $U(1)$ has zero Berry phase (e.g. Moessner and Moore Ch 2).\
+One approach to show that all classical 2 band systems are topologically trivial is to show that the transformations are isomorphic to $U(1)$.
+Importantly for this idea is the fact that $SO(2)$ is isomorphic to $U(1)$.
+It's tempting to think that this is a good strategy, because of course, we can always write classical systems in terms of purely real variables,
+\begin{equation}
+  \label{eq:reals}
+  f(x,t) = f_a \cos{(k x - \omega t)} + f_b \sin{(k x - \omega t)}.
+\end{equation}
+If we could somehow write the equations of motion for classical wave systems in pseudo-Schr\"odinger form,
+\begin{equation}
+  \label{eq:pseudo-schrodinger}
+  \frac{\partial \ket{x}}{\partial t} = \mathcal{H} \ket{x},
+\end{equation}
+where $\ket{x}$ is a vector of reals and $\mathcal{H}$ is a linear operator, then if this becomes an eigenvalue problem when the wave ansatz (equation~(\ref{eq:reals})) is inserted, we could see if $\mathcal{H} \in SO(2)$.
+If in fact it always is, then the proof is complete: all two-band classical systems have trivial topology.
+Thus, the Delplace system is the minimum because it is three-band.
+There is a reason to think this might be the case: orthogonal matrices represent inner product preserving transformations. For non-dissipative Hamiltonian wave systems, the typical inner product is the energy inner product, which of course is preserved under time evolution since energy itself is manifestly consered.
+Thus, it's not crazy to think that the operators in 2-band real systems would be $SO(2)$!
+
+Alas, this proof appears to be flawed at the first step because it's immediately obvious that if we use a purely real representation of the wave ansatz (equation~(\ref{eq:reals})), we don't have an eigenvalue problem in the first place.
+This can be seen by trying it.
+Let's try the wave equation,
+\begin{equation}
+  \label{eq:wave}
+  \frac{\partial^2 f}{\partial t^2} + c^2 \frac{\partial^2 f}{\partial x^2} = 0.
+\end{equation}
+We can put this into a first-order in time formulation in preparation for creating an eigenvalue problem,
+\begin{align}
+  \label{eq:wave_1st_order}
+  \frac{\partial \mathbf{X}}{\partial t} &= \mathcal{L} \mathbf{X}\\
+  \mathcal{L} &= \begin{bmatrix} 0 & -c^2 \partial^2_x\\ 1 & 0 \end{bmatrix}
+\end{align}
+with $\mathbf{X} = \begin{bmatrix}u & f\end{bmatrix}^T$ and $u \equiv \partial_t f$.
+The next step clearly shows the problem:
+\begin{equation}
+  \label{eq:problem}
+  \frac{\partial \mathbf{X}}{\partial t} = -\omega \begin{bmatrix}
+      u_a \sin{(k x - \omega t)} - u_b \cos{(k x - \omega t)}\\
+      f_a \sin{(k x - \omega t)} - f_b \cos{(k x - \omega t)
+      \end{bmatrix}
+      \ne A \mathbf{X}},
+  \end{equation}
+  with $A \in \mathbb{R}$, so equation~(\ref{eq:wave_1st_order}) is not an eigenvalue equation!
+
+  However, all might not be lost here. One additional complication is the fact that under certain conditions that I'm pretty sure are met in all of our cases of interest, the Hilbert transform can be written as
+  \begin{align}
+  \Hilbert{\,\sin(\kz Z)\,} \ = \   \cos (\kz Z)\\
+    \Hilbert{\cos(\kz Z)} \ = \  - \sin(\kz Z).
+  \end{align}
+  If we apply this here, then we can see that
+  \begin{equation}
+    \label{eq:dt_hilbert}
+    \frac{\partial \mathbf{X}}{\partial t} = \omega \Hilbert{\mathbf{X}}.    
+  \end{equation}
+  If the Hilbert transform $\Hilbert{\mathbf{X}}$ is a linear operator that can be represented as a matrix $\mathbf{H}$  operating on a state vector via matrix multiplication, then we can write
+  \begin{equation}
+    \label{eq:real_hilbert_gen_eval}
+    \omega \mathbf{H}.{\mathbf{X}} = \mathbf{L}.\mathbf{X},
+  \end{equation}
+  which is a \emph{generalized} eigenvalue problem, since $\mathcal{L}$ can always be represented as a matrix.
+It's not clear to me if this also has band structure, and if so, what it looks like.
+
+\subsection{What happens when $\ket{X}$ becomes $\Re{\ket{x}}$?}
+\label{sec:real_from_spin}
+
+We could also try going the other way, by taking a system with known non-zero Berry phase and forcing the state vector to become real.
+A classic example is the 2-state spin in a magnetic field system, $\mathbf{H} = \mathbf{\sigma} \cdot \mathbf{B}$ (need to look this up to get it right).
+This Hamiltonain is a member of $SU(2)$.
+
+If we do
+\begin{equation}
+  \label{eq:spin}
+  \mathbf{H} \ket{\psi} = E \ket{\psi}
+\end{equation}
+but transform $\ket{\psi} \to (\ket{\psi} + \ket{\psi}^*)/2$, what happens?
+Does the Berry phase go to zero?
+If it does, then this is an interesting indication of a possible direction.
+In this case, the idea is that maybe the operators $\mathbf{H}$ that are allowed when we require a real state vector are some subgroup of $SU(2)$ that has some property that forbids non-zero Berry phase.
 \end{document}
