@@ -23,6 +23,12 @@
 
 \section{Fluid Models}
 \label{sec:fluids}
+Can write momentum equation as
+\begin{align}
+  \partial_t \left(\rho \mathbf{u} \right) + \nabla \cdot \left(\rho \mathbf{u} \mathbf{u} \right) &= -\nabla p\\
+  \partial_t \rho + \nabla \cdot \left( \rho \mathbf{u} \right) &= 0\\
+  p &= c_s^2 \rho
+\end{align}
 
 \subsection{2D Isothermal Acoustic Waves in a Rotating Medium}
 \label{sec:2D_isotherm}
@@ -78,6 +84,42 @@ Not Hermitian.
 
 Not a PDE!
 
+\subsection{1D Shear flows}
+\label{sec:shear}
+
+Add a background shear flow $U(z)$ to a 1D model in $x$:
+\begin{align}
+  \label{eq:shear}
+  \partial_t u + w \partial_z U(z) + U(z) \partial_x u &= -c_s^2\frac{\partial_x \rho}{\rho}\\
+  \partial_t \rho + \rho_0 \partial_x u + U(z) \partial_x \rho &= 0
+\end{align}
+
+\subsection{Busse Annulus}
+\label{sec:busse}
+
+The Busse Annulus is a topographic $\beta$-plane with convection.
+It is the rapidly rotating limit of annular convection in a small, rectangular domain.
+Unlike in typical $\beta$-planes, $y$ is the Cartesian equivalent of the \emph{radial} coordinate, not the colatitude coordinate.
+
+The linearized, inviscid, conduction-free limit of the Busse Annulus model is given by
+\begin{align}
+  \partial_t \nabla^2 \psi &= \partial_x \theta - \mathrm{Co} \partial_x \psi\\
+  \partial_t \theta + \partial_x \psi &= 0,
+\end{align}
+with $\psi$ the streamfunction and the ``Coriolis number'' $\mathrm{Co} = \beta d \sqrt{d/g\alpha \Delta T}$.
+Under time reversal,
+\begin{align}
+  t &\to -t\\
+  \psi &\to -\psi
+\end{align}
+\section{Plasma models}
+\label{sec:plasmas}
+
+\subsection{Cold plasma waves}
+\label{sec:cold_plasma}
+
+
+
 \section{Ideas for proof}
 \label{sec:proof_ideas}
 
@@ -123,16 +165,16 @@ The next step clearly shows the problem:
   \label{eq:problem}
   \frac{\partial \mathbf{X}}{\partial t} = -\omega \begin{bmatrix}
       u_a \sin{(k x - \omega t)} - u_b \cos{(k x - \omega t)}\\
-      f_a \sin{(k x - \omega t)} - f_b \cos{(k x - \omega t)
+      f_a \sin{(k x - \omega t)} - f_b \cos{(k x - \omega t)}
       \end{bmatrix}
-      \ne A \mathbf{X}},
+      \ne A \mathbf{X},
   \end{equation}
   with $A \in \mathbb{R}$, so equation~(\ref{eq:wave_1st_order}) is not an eigenvalue equation!
 
   However, all might not be lost here. One additional complication is the fact that under certain conditions that I'm pretty sure are met in all of our cases of interest, the Hilbert transform can be written as
   \begin{align}
-  \Hilbert{\,\sin(\kz Z)\,} \ = \   \cos (\kz Z)\\
-    \Hilbert{\cos(\kz Z)} \ = \  - \sin(\kz Z).
+  \Hilbert{\sin(k_z Z)} \ = \   \cos (k_z Z)\\
+    \Hilbert{\cos(k_z Z)} \ = \  - \sin(k_z Z).
   \end{align}
   If we apply this here, then we can see that
   \begin{equation}
