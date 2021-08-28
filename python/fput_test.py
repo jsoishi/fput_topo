@@ -1,3 +1,11 @@
+"""fput_test.py
+
+A simple script to compute the FPUT problem using the SABA2C method outlined in 
+
+Pace & Campbell, Chaos 29, 023132 (2019)
+
+"""
+
 import numpy as np
 #import matplotlib.pyplot as plt
 
