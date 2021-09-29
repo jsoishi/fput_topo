@@ -7,7 +7,8 @@ Pace & Campbell, Chaos 29, 023132 (2019)
 """
 
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+plt.style.use('prl')
 
 class SABA2C(object):
     g = (2-np.sqrt(3))/24.
@@ -137,7 +138,7 @@ if __name__ == "__main__":
     # plt.savefig("q_init.png",dpi=100)
     # plt.clf()
     t = [0]
-    t_stop = 100*period
+    t_stop = 1000*period
     dt = period/100
 
     e_1 = [calc_mode_energy(p,q,1,alpha)]
@@ -187,22 +188,24 @@ if __name__ == "__main__":
     # fig.canvas.draw()
     # fig.savefig("frames/snap_{:05d}.png".format(iteration))
 
-    # e_tot = np.array(e_tot)
-    # fig, ax = plt.subplots()
-    # ax.plot(t,e_1,label='mode 1')
-    # ax.plot(t,e_2,label='mode 2')
-    # ax.plot(t,e_tot,'k',alpha=0.4, label='total energy')
-    # ax.set_xlabel("t")
-    # ax.set_ylabel("E")
-    # ax.legend()
-    # fig.savefig("energy_vs_time.png",dpi=100)
-    # plt.clf()
-    # fig, ax = plt.subplots()
-    # ax.plot(t,np.abs(e_tot/e_tot[0] -1))
-    # ax.axhline(0)
-    # ax.set_yscale('log')
-    # ax.set_xlabel(r"$t$")
-    # ax.set_ylabel(r"$E/E_0 - 1$")
+    e_tot = np.array(e_tot)
+    fig, ax = plt.subplots()
+    ax.plot(t,e_1,label='mode 1')
+    ax.plot(t,e_2,label='mode 2')
+    ax.plot(t,e_tot,'k',alpha=0.4, label='total energy')
+    plt.axvline(1.66e3, alpha=0.4)
+    ax.set_xlabel("time")
+    ax.set_ylabel("Energy")
+    ax.legend(loc='upper right')
+    plt.tight_layout()
+    fig.savefig("energy_vs_time.png",dpi=400)
+    plt.clf()
+    fig, ax = plt.subplots()
+    ax.plot(t,np.abs(e_tot/e_tot[0] -1))
+    ax.axhline(0)
+    ax.set_yscale('log')
+    ax.set_xlabel(r"$t$")
+    ax.set_ylabel(r"$E/E_0 - 1$")
 
-    # fig.savefig("energy_cons_vs_time.png",dpi=100)
+    fig.savefig("energy_cons_vs_time.png",dpi=100)
     print("final iteration = {:d} final time  = {:5.2f}".format(iteration, t[-1]))
