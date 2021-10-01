@@ -39,7 +39,7 @@ class SABA2C(object):
         return p,q
 
 class FPUT(SABA2C):
-    def __init__(self, chi, u=3):
+    def __init__(self, chi, k=None, u=3):
         self.chi = chi
         self.u = u
         self.u_exp = u - 1
@@ -55,7 +55,7 @@ class FPUT(SABA2C):
         
         p_out = np.zeros_like(p)
         dq = q[1:] - q[0:-1]
-        p_out[1:-1] = p[1:-1] + tau*(dq[1:] - dq[0:-1] + self.chi*(dq[1:]**(self.u_exp) - dq[0:-1]**(self.u_exp)))
+        p_out[1:-1] = p[1:-1] + tau*(self.k[1:]*(dq[1:] + self.chi*dq[1:]**(self.u_exp)) - self.k[0:-1]*(dq[0:-1] + self.chi*dq[0:-1]**(self.u_exp)))
 
         return p_out, q
 
@@ -67,18 +67,22 @@ class FPUT(SABA2C):
         dq2np1 = dq[3:]
         dq2nm1 = dq[1:-2]
         dq2nm2 = dq[0:-3]
+
+        k2n = self.k[2:-1]
+        k2np1 = self.k[3:]
+        k2nm1 = self.k[1:-2]
+        k2nm2 = self.k[0:-3]
         
         p_out[1] = p[1] \
-            + two_tau*(dq[1] - dq[2] + self.chi*(dq[1]**self.u_exp - dq[2]**self.u_exp))*(1 + self.chi*self.u_exp*dq[1]**(self.u - 2)) \
-            + two_tau*(q[2] - 2*q[1] + self.chi*(dq[1]**self.u_exp - q[1]**self.u_exp))*(2 + self.chi*self.u_exp*(q[1]**(self.u - 2) + dq[1]**(self.u - 2)))
+            + two_tau*(-self.k[0]*(1+self.u_exp*self.chi*q[1]**(self.u-2))*(self.chi + self.k[0]*(q[1]+self.chi*q[1]**self.u_exp)) - (self.k[0]*(-1-self.u_exp*self.chi*q[1]**(self.u-2))+self.k[1]*(-1-self.u_exp*self.chi*(-q[1]+q[2])**(self.u-2)))*(self.k[0]*(-q[1]-self.chi*q[1]**self.u_exp)+self.k[1]*(-q[1]+q[2]+self.chi*(-q[1]+q[2])**self.u_exp)) - self.k[1]*(1+self.u_exp*self.chi*(-q[1]+q[2])**(self.u-2))*(self.k[1]*(q[1]-q[2]-self.chi*(-q[1]+q[2])**self.u_exp)+self.k[2]*(-q[2]+q[3]+self.chi*(-q[2]+q[3])**self.u_exp)))
         
         p_out[2:-2] = p[2:-2] \
-            + two_tau*(dq2n - dq2np1 + self.chi*(dq2n**self.u_exp - dq2np1**self.u_exp))*(1+self.chi*self.u_exp*dq2n**(self.u - 2)) \
-            + two_tau*(dq2n - dq2nm1 + self.chi*(dq2n**self.u_exp - dq2nm1**self.u_exp))*(2 + self.chi*self.u_exp*(dq2nm1**(self.u - 2) + dq2n**(self.u - 2))) \
-            + two_tau*(dq2nm2 - dq2nm1 + self.chi*(dq2nm2**self.u_exp - dq2nm1**self.u_exp))*(1 + self.chi*self.u_exp*dq2nm1**(self.u - 2))
+            + two_tau*k2n*(1+self.chi*self.u_exp*dq2n**(self.u-2))*(k2n*(dq2n + self.chi*dq2n**(self.u_exp)) -k2np1*(dq2np1 + self.chi*dq2np1**(self.u_exp))) \
+            + two_tau*(k2nm1*(1+self.chi*self.u_exp*dq2nm1**(self.u-2)) + k2n*(1+self.chi*self.u_exp*dq2n**(self.u-2)))*(k2n*(dq2n + self.chi*dq2n**self.u_exp) - k2nm1*(dq2nm1 + self.chi*dq2nm1**self.u_exp)) \
+            + two_tau*k2nm1*(1+self.chi*self.u_exp*dq2nm1**(self.u-2))*(k2nm2*(dq2nm2 + self.chi*dq2nm2**self.u_exp) - k2nm1*(dq2nm1 + self.chi*dq2nm1**self.u_exp))
+        
         p_out[-2] = p[-2] \
-            + two_tau*(q[-3] - 2*q[-2] + self.chi*((-q[-2])**self.u_exp - dq[-3]**self.u_exp))*(2 + self.chi*self.u_exp*(dq[-3]**(self.u - 2) + (-q[-2])**(self.u - 2))) \
-            + two_tau*(dq[-4] - dq[-3] + self.chi*(dq[-4]**self.u_exp - dq[-3]**self.u_exp))*(1 + self.chi*self.u_exp*dq[-3]**(self.u - 2))
+            + two_tau*(-self.k[-2]*(self.u_exp*self.chi*(-q[-2])**(self.u-2)+1)*(self.k[-2]*(q[-2]-self.chi*(-q[-2])**self.u_exp)+self.k[-1]*self.chi)-self.k[-3]*(self.u_exp*self.chi*(q[-2]-q[-3])**(self.u-2)+1)*(self.k[-4]*(-self.chi*(q[-3]-q[-4])**self.u_exp+q[-4]-q[-3])+self.k[-3]*(self.chi*(q[-2]-q[-3])**self.u_exp-q[-3]+q[-2]))-(self.k[-2]*(-(self.u_exp*self.chi*(-q[-2])**(self.u-2))-1)+self.k[-3]*(-(self.u_exp*self.chi*(q[-2]-q[-3])**(self.u-2))-1))*(self.k[-2]*(self.chi*(-q[-2])**self.u_exp-q[-2])+self.k[-3]*(-self.chi*(q[-2]-q[-3])**self.u_exp+q[-3]-q[-2])))
 
         return p_out, q
 
@@ -128,6 +132,8 @@ if __name__ == "__main__":
     n = np.arange(1,N+1)
     q = np.zeros(N+2)
     p = np.zeros(N+2)
+    k = np.ones(N+1)
+    fput.k = k
     q[1:-1] = A*np.sin(np.pi*n/(N+1))
 
     # plt.style.use('prl')
