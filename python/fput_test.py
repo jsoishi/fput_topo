@@ -86,12 +86,12 @@ class FPUT(SABA2C):
 
         return p_out, q
 
-def calc_mode_energy(p, q, mode, alpha):
+def calc_mode_energy(p, q, k, mode, alpha):
 
     p_mode, q_mode = project_mode(p,q,mode)
     
                  
-    return hamiltonian(p_mode, q_mode, alpha)
+    return hamiltonian(p_mode, q_mode, k, alpha)
 
 def project_mode(p, q, mode):
     # x_n = n dx
@@ -109,12 +109,12 @@ def project_mode(p, q, mode):
     basis_fn[1:-1] = np.sin(mode*n*np.pi/(N+1))
     return p_mode*basis_fn, q_mode*basis_fn
 
-def hamiltonian(p, q, alpha):
+def hamiltonian(p, q, k, alpha):
     pn = p[0:-1]
     qn = q[0:-1]
     qnp1 = q[1:]
     
-    H = 0.5* (pn**2).sum() + (0.5*(qnp1 - qn)**2).sum() + (alpha/3 * (qnp1 - qn)**3).sum()
+    H = 0.5* (pn**2).sum() + (0.5*k*(qnp1 - qn)**2).sum() + (k*alpha/3 * (qnp1 - qn)**3).sum()
 
     return H
 
@@ -147,9 +147,9 @@ if __name__ == "__main__":
     t_stop = 1000*period
     dt = period/100
 
-    e_1 = [calc_mode_energy(p,q,1,alpha)]
-    e_2 = [calc_mode_energy(p,q,2,alpha)]
-    e_tot = [hamiltonian(p,q,alpha)]
+    e_1 = [calc_mode_energy(p,q,k,1,alpha)]
+    e_2 = [calc_mode_energy(p,q,k,2,alpha)]
+    e_tot = [hamiltonian(p,q,k, alpha)]
     print("E init = {:7.5f}".format(e_tot[0]))
     print("e_1[0] = {}".format(e_1[0]))
 
@@ -166,9 +166,9 @@ if __name__ == "__main__":
 
     while t[-1] < t_stop:
         p,q = fput.step(p,q,dt)
-        e_1.append(calc_mode_energy(p,q,1,alpha))
-        e_2.append(calc_mode_energy(p,q,2,alpha))
-        e_tot.append(hamiltonian(p,q,alpha))
+        e_1.append(calc_mode_energy(p,q,k,1,alpha))
+        e_2.append(calc_mode_energy(p,q,k,2,alpha))
+        e_tot.append(hamiltonian(p,q,k,alpha))
         t.append(t[-1]+dt)
         if iteration % cadence == 0:
             print("iteration: {:d} e_1 = {:5.2f} e_2 = {:5.2f}".format(iteration, e_1[-1], e_2[-1]))
@@ -185,7 +185,7 @@ if __name__ == "__main__":
             p,q = fput.step(p,q,-dt)
             e_1.append(calc_mode_energy(p,q,1,alpha))
             e_2.append(calc_mode_energy(p,q,2,alpha))
-            e_tot.append(hamiltonian(p,q,alpha))
+            e_tot.append(hamiltonian(p,q,k,alpha))
             t.append(t[-1]-dt)
         print("Ef/Ei - 1 = {:5.5e}".format(e_tot[-1]/e_tot[0]-1))
         print("t final = {}".format(t[-1]))
