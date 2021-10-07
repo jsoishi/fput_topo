@@ -4,17 +4,25 @@ A simple script to compute the FPUT problem using the SABA2C method outlined in
 
 Pace & Campbell, Chaos 29, 023132 (2019)
 
+Usage:
+    fput_test.py [--no-correction --dt=<dt>]
+
+Options:
+    --no-correction             Turn off SABA2C corrections
+    --dt=<dt>                   timestep [default: 0.1]
+
 """
 
 import numpy as np
+import h5py
 import matplotlib.pyplot as plt
 plt.style.use('prl')
 
 class SABA2C(object):
     g = (2-np.sqrt(3))/24.
-    c1 = (1 - 1/np.sqrt(3))/2
+    c1 = 0.5*(1 - 1/np.sqrt(3))
     c2 = 1/np.sqrt(3)
-    d1 = 1/2
+    d1 = 0.5
     def A_stage(self, p,q, dt, c):
         raise NotImplementedError("SABA2C is a base class.")
     def B_stage(self, p,q, dt):
@@ -23,13 +31,15 @@ class SABA2C(object):
         raise NotImplementedError("SABA2C is a base class.")
     
     def step(self, p,q, dt):
-        p,q = self.C_stage(p,q, dt)
+        if self.correction:
+            p,q = self.C_stage(p,q, dt)
         p,q = self.A_stage(p,q, dt, self.c1)
         p,q = self.B_stage(p,q, dt)
         p,q = self.A_stage(p,q, dt, self.c2)
         p,q = self.B_stage(p,q, dt)
         p,q = self.A_stage(p,q, dt, self.c1)
-        p,q = self.C_stage(p,q, dt)
+        if self.correction:
+            p,q = self.C_stage(p,q, dt)
 
         assert (p[0] == 0)
         assert (p[-1] == 0)
@@ -39,10 +49,11 @@ class SABA2C(object):
         return p,q
 
 class FPUT(SABA2C):
-    def __init__(self, chi, k=None, u=3):
+    def __init__(self, chi, k=None, u=3, correction=True):
         self.chi = chi
         self.u = u
         self.u_exp = u - 1
+        self.correction = correction
 
     def A_stage(self, p, q, dt, c):
         tau = c*dt
@@ -59,30 +70,61 @@ class FPUT(SABA2C):
 
         return p_out, q
 
+    # def C_stage(self, p, q, dt):
+    #     p_out = np.zeros_like(p)
+    #     two_tau = -self.g * dt**3
+    #     dq = q[1:] - q[0:-1]
+    #     dq2n = dq[2:-1]
+    #     dq2np1 = dq[3:]
+    #     dq2nm1 = dq[1:-2]
+    #     dq2nm2 = dq[0:-3]
+        
+    #     p_out[1] = p[1] \
+    #         + two_tau*(dq[1] - dq[2] + self.chi*(dq[1]**self.u_exp - dq[2]**self.u_exp))*(1 + self.chi*self.u_exp*dq[1]**(self.u - 2)) \
+    #         + two_tau*(q[2] - 2*q[1] + self.chi*(dq[1]**self.u_exp - q[1]**self.u_exp))*(2 + self.chi*self.u_exp*(q[1]**(self.u - 2) + dq[1]**(self.u - 2)))
+        
+    #     p_out[2:-2] = p[2:-2] \
+    #         + two_tau*(dq2n - dq2np1 + self.chi*(dq2n**self.u_exp - dq2np1**self.u_exp))*(1+self.chi*self.u_exp*dq2n**(self.u - 2)) \
+    #         + two_tau*(dq2n - dq2nm1 + self.chi*(dq2n**self.u_exp - dq2nm1**self.u_exp))*(2 + self.chi*self.u_exp*(dq2nm1**(self.u - 2) + dq2n**(self.u - 2))) \
+    #         + two_tau*(dq2nm2 - dq2nm1 + self.chi*(dq2nm2**self.u_exp - dq2nm1**self.u_exp))*(1 + self.chi*self.u_exp*dq2nm1**(self.u - 2))
+    #     p_out[-2] = p[-2] \
+    #         + two_tau*(q[-3] - 2*q[-2] + self.chi*((-q[-2])**self.u_exp - dq[-2]**self.u_exp))*(2 + self.chi*self.u_exp*(dq[-2]**(self.u - 2) + (-q[-2])**(self.u - 2))) \
+    #         + two_tau*(dq[-3] - dq[-2] + self.chi*(dq[-3]**self.u_exp - dq[-2]**self.u_exp))*(1 + self.chi*self.u_exp*dq[-2]**(self.u - 2))
+
+    #     return p_out, q
     def C_stage(self, p, q, dt):
         p_out = np.zeros_like(p)
         two_tau = -self.g * dt**3
-        dq = q[1:] - q[0:-1]
-        dq2n = dq[2:-1]
-        dq2np1 = dq[3:]
-        dq2nm1 = dq[1:-2]
-        dq2nm2 = dq[0:-3]
+        # dq = q[1:] - q[0:-1]
+        # dq2n = dq[2:-1]
+        # dq2np1 = dq[3:]
+        # dq2nm1 = dq[1:-2]
+        # dq2nm2 = dq[0:-3]
 
         k2n = self.k[2:-1]
         k2np1 = self.k[3:]
         k2nm1 = self.k[1:-2]
         k2nm2 = self.k[0:-3]
+
+        q2n = q[2:-2]
+        q2nm1 = q[1:-3]
+        q2nm2 = q[0:-4]
+        q2np1 = q[3:-1]
+        q2np2 = q[4:]
         
         p_out[1] = p[1] \
-            + two_tau*(-self.k[0]*(1+self.u_exp*self.chi*q[1]**(self.u-2))*(self.chi + self.k[0]*(q[1]+self.chi*q[1]**self.u_exp)) - (self.k[0]*(-1-self.u_exp*self.chi*q[1]**(self.u-2))+self.k[1]*(-1-self.u_exp*self.chi*(-q[1]+q[2])**(self.u-2)))*(self.k[0]*(-q[1]-self.chi*q[1]**self.u_exp)+self.k[1]*(-q[1]+q[2]+self.chi*(-q[1]+q[2])**self.u_exp)) - self.k[1]*(1+self.u_exp*self.chi*(-q[1]+q[2])**(self.u-2))*(self.k[1]*(q[1]-q[2]-self.chi*(-q[1]+q[2])**self.u_exp)+self.k[2]*(-q[2]+q[3]+self.chi*(-q[2]+q[3])**self.u_exp)))
-        
+            -two_tau*(k[0]*(-(self.u_exp*self.chi*q[1]**(self.u-2))-1)+k[1]*(-(self.u_exp*self.chi*(q[2]-q[1])**(self.u-2))-1))*(k[0]*(-self.chi*q[1]**self.u_exp-q[1])+k[1]*(self.chi*(q[2]-q[1])**self.u_exp-q[1]+q[2])) \
+            -two_tau*k[1]*(self.u_exp*self.chi* (q[2]-q[1])**(self.u-2)+1)*(k[1]*(-self.chi*(q[2]-q[1])**self.u_exp+q[1]-q[2])+k[2]*(self.chi*(q[3]-q[2])**self.u_exp-q[2]+q[3]))
+
         p_out[2:-2] = p[2:-2] \
-            + two_tau*k2n*(1+self.chi*self.u_exp*dq2n**(self.u-2))*(k2n*(dq2n + self.chi*dq2n**(self.u_exp)) -k2np1*(dq2np1 + self.chi*dq2np1**(self.u_exp))) \
-            + two_tau*(k2nm1*(1+self.chi*self.u_exp*dq2nm1**(self.u-2)) + k2n*(1+self.chi*self.u_exp*dq2n**(self.u-2)))*(k2n*(dq2n + self.chi*dq2n**self.u_exp) - k2nm1*(dq2nm1 + self.chi*dq2nm1**self.u_exp)) \
-            + two_tau*k2nm1*(1+self.chi*self.u_exp*dq2nm1**(self.u-2))*(k2nm2*(dq2nm2 + self.chi*dq2nm2**self.u_exp) - k2nm1*(dq2nm1 + self.chi*dq2nm1**self.u_exp))
-        
+-two_tau*k2nm1*(self.u_exp*self.chi*(q2n-q2nm1)**(self.u-2)+1)*(k2nm2*(-self.chi*(q2nm1-q2nm2)**self.u_exp+q2nm2-q2nm1)+k2nm1*(self.chi*(q2n-q2nm1)**self.u_exp-q2nm1+q2n))\
+-two_tau*(k2nm1*(-(self.u_exp*self.chi*(q2n-q2nm1)**(self.u-2))-1)+k2n*(-(self.u_exp*self.chi*(q2np1-q2n)**(self.u-2))-1))*(k2nm1*(-self.chi*(q2n-q2nm1)**self.u_exp+q2nm1-q2n)+k2n*(self.chi*(q2np1-q2n)**self.u_exp-q2n+q2np1))\
+-two_tau*k2n*(self.u_exp*self.chi*(q2np1-q2n)**(self.u-2)+1)*(k2n*(-self.chi*(q2np1-q2n)**self.u_exp+q2n-q2np1)+k2np1*(self.chi*(q2np2-q2np1)**self.u_exp-q2np1+q2np2))
+
         p_out[-2] = p[-2] \
-            + two_tau*(-self.k[-2]*(self.u_exp*self.chi*(-q[-2])**(self.u-2)+1)*(self.k[-2]*(q[-2]-self.chi*(-q[-2])**self.u_exp)+self.k[-1]*self.chi)-self.k[-3]*(self.u_exp*self.chi*(q[-2]-q[-3])**(self.u-2)+1)*(self.k[-4]*(-self.chi*(q[-3]-q[-4])**self.u_exp+q[-4]-q[-3])+self.k[-3]*(self.chi*(q[-2]-q[-3])**self.u_exp-q[-3]+q[-2]))-(self.k[-2]*(-(self.u_exp*self.chi*(-q[-2])**(self.u-2))-1)+self.k[-3]*(-(self.u_exp*self.chi*(q[-2]-q[-3])**(self.u-2))-1))*(self.k[-2]*(self.chi*(-q[-2])**self.u_exp-q[-2])+self.k[-3]*(-self.chi*(q[-2]-q[-3])**self.u_exp+q[-3]-q[-2])))
+            -two_tau*k[-3]*(self.u_exp*self.chi*(q[-2]-q[-3])**(self.u-2)+1)*(k[-4]*(-self.chi*(q[-3]-q[-4])**self.u_exp+q[-4]-q[-3])+k[-3]*(self.chi*(q[-2]-q[-3])**self.u_exp-q[-3]+q[-2])) \
+            -two_tau*(k[-2]*(-(self.u_exp*self.chi*(-q[-2])**(self.u-2))-1)+k[-3]*(-(self.u_exp*self.chi*(q[-2]-q[-3])**(self.u-2))-1))*(k[-2]*(self.chi*(-q[-2])**self.u_exp-q[-2])+k[-3]*(-self.chi*(q[-2]-q[-3])**self.u_exp+q[-3]-q[-2]))
+
 
         return p_out, q
 
@@ -119,15 +161,32 @@ def hamiltonian(p, q, k, alpha):
     return H
 
 if __name__ == "__main__":
+
+    from docopt import docopt
+
+    # parse arguments
+    args = docopt(__doc__)
+    dt = float(args['--dt'])
+    if args['--no-correction']:
+        correction=False
+    else:
+        correction=True
+
     time_reversal = False
     alpha = 0.25
-    N = 15
+    N = 31
     A = 1
     cadence = 100
     omega_n = 1
     period = 2*np.pi/omega_n
+
+    print("correction = ", correction)
+    outfilename = "fput_N{}_A{}_alpha{}_dt{}".format(N,A,alpha,dt)
+    if not correction:
+        outfilename +="_nocorrection"
+    outfilename += ".h5"
     
-    fput = FPUT(alpha)
+    fput = FPUT(alpha, correction=correction)
 
     n = np.arange(1,N+1)
     q = np.zeros(N+2)
@@ -144,8 +203,8 @@ if __name__ == "__main__":
     # plt.savefig("q_init.png",dpi=100)
     # plt.clf()
     t = [0]
-    t_stop = 1000*period
-    dt = period/100
+    t_stop = 100*period
+    #dt = period/400
 
     e_1 = [calc_mode_energy(p,q,k,1,alpha)]
     e_2 = [calc_mode_energy(p,q,k,2,alpha)]
@@ -163,9 +222,12 @@ if __name__ == "__main__":
     # ax.set_ylabel("q")
     # ax.legend()
     # fig.savefig("frames/snap_{:05d}.png".format(0))
-
+    p_list = [p]
+    q_list = [q]
     while t[-1] < t_stop:
         p,q = fput.step(p,q,dt)
+        p_list.append(p)
+        q_list.append(q)
         e_1.append(calc_mode_energy(p,q,k,1,alpha))
         e_2.append(calc_mode_energy(p,q,k,2,alpha))
         e_tot.append(hamiltonian(p,q,k,alpha))
@@ -179,6 +241,17 @@ if __name__ == "__main__":
             # fig.savefig("frames/snap_{:05d}.png".format(iteration))
 
         iteration += 1
+    
+    with h5py.File(outfilename,"w") as outfile:
+        outfile.create_group("state")
+        outfile.create_group("energies")
+        outfile.create_group("scales")
+        outfile['tasks/p'] = np.array(p_list)
+        outfile['tasks/q'] = np.array(q_list)
+        outfile['scales/t'] = np.array(t)
+        outfile['energies/e_1'] = np.array(e_1)
+        outfile['energies/e_2'] = np.array(e_2)
+        outfile['energies/e_tot'] = np.array(e_tot)
 
     if time_reversal:
         while t[-1] > 0:
@@ -194,24 +267,24 @@ if __name__ == "__main__":
     # fig.canvas.draw()
     # fig.savefig("frames/snap_{:05d}.png".format(iteration))
 
-    e_tot = np.array(e_tot)
-    fig, ax = plt.subplots()
-    ax.plot(t,e_1,label='mode 1')
-    ax.plot(t,e_2,label='mode 2')
-    ax.plot(t,e_tot,'k',alpha=0.4, label='total energy')
-    plt.axvline(1.66e3, alpha=0.4)
-    ax.set_xlabel("time")
-    ax.set_ylabel("Energy")
-    ax.legend(loc='upper right')
-    plt.tight_layout()
-    fig.savefig("energy_vs_time.png",dpi=400)
-    plt.clf()
-    fig, ax = plt.subplots()
-    ax.plot(t,np.abs(e_tot/e_tot[0] -1))
-    ax.axhline(0)
-    ax.set_yscale('log')
-    ax.set_xlabel(r"$t$")
-    ax.set_ylabel(r"$E/E_0 - 1$")
+    # e_tot = np.array(e_tot)
+    # fig, ax = plt.subplots()
+    # ax.plot(t,e_1,label='mode 1')
+    # ax.plot(t,e_2,label='mode 2')
+    # ax.plot(t,e_tot,'k',alpha=0.4, label='total energy')
+    # plt.axvline(1.66e3, alpha=0.4)
+    # ax.set_xlabel("time")
+    # ax.set_ylabel("Energy")
+    # ax.legend(loc='upper right')
+    # plt.tight_layout()
+    # fig.savefig("energy_vs_time.png",dpi=400)
+    # plt.clf()
+    # fig, ax = plt.subplots()
+    # ax.plot(t,np.abs(e_tot/e_tot[0] -1))
+    # ax.axhline(0)
+    # ax.set_yscale('log')
+    # ax.set_xlabel(r"$t$")
+    # ax.set_ylabel(r"$E/E_0 - 1$")
 
-    fig.savefig("energy_cons_vs_time.png",dpi=100)
+    # fig.savefig("energy_cons_vs_time.png",dpi=100)
     print("final iteration = {:d} final time  = {:5.2f}".format(iteration, t[-1]))
