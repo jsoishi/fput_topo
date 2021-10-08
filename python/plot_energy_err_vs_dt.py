@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import calc_energy_err
 plt.style.use('prl')
 A = 1
 N = 31
@@ -10,11 +11,6 @@ fn = ["fput_N31_A1_alpha0.25_dt0.015707963267948967.h5", "fput_N31_A1_alpha0.25_
 fn_old = ["fput_N31_A1_alpha0.25_dt0.015707963267948967_old.h5", "fput_N31_A1_alpha0.25_dt0.031415926535897934_old.h5","fput_N31_A1_alpha0.25_dt0.0628318530718_old.h5"]
 fn_nocorr = ["fput_N31_A1_alpha0.25_dt0.015707963267948967_nocorrection.h5", "fput_N31_A1_alpha0.25_dt0.031415926535897934_nocorrection.h5","fput_N31_A1_alpha0.25_dt0.0628318530718_nocorrection.h5"]
 dt = [0.015707963267948967, 0.031415926535897934, 2*np.pi/100]
-
-def calc_energy_error(df, E0, avg_time):
-    rel_en_err = np.abs(df['energies/e_tot']/E0 - 1)
-
-    return rel_en_err[df['scales/t'][:] > avg_time].mean()
 
 rel_err = []
 rel_err_old = []
@@ -37,8 +33,8 @@ dt = np.array(dt)
 plt.loglog(dt, rel_err, 'x', label='SABA2C')
 plt.loglog(dt, rel_err_old, '+', label='SABA2C old')
 plt.loglog(dt, rel_err_noc, 'o', label='SABA2')
-plt.loglog(dt, rel_err[0]*(dt/dt[0])**4, label=r'$dt^4$')
-plt.loglog(dt, rel_err_old[0]*(dt/dt[0])**4, label=r'$dt^4$')
+plt.loglog(dt, rel_err[0]*(dt/dt[0])**4, color='k', alpha=0.2, label=r'$dt^4$')
+plt.loglog(dt, rel_err_old[0]*(dt/dt[0])**4, color='k', alpha=0.2)
 plt.legend()
 plt.xlabel("dt")
 plt.ylabel("Relative Energy Error")
