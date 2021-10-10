@@ -72,28 +72,6 @@ class FPUT(SABA2C):
 
         return p_out, q
 
-    # def C_stage(self, p, q, dt):
-    #     p_out = np.zeros_like(p)
-    #     two_tau = -self.g * dt**3
-    #     dq = q[1:] - q[0:-1]
-    #     dq2n = dq[2:-1]
-    #     dq2np1 = dq[3:]
-    #     dq2nm1 = dq[1:-2]
-    #     dq2nm2 = dq[0:-3]
-        
-    #     p_out[1] = p[1] \
-    #         + two_tau*(dq[1] - dq[2] + self.chi*(dq[1]**self.u_exp - dq[2]**self.u_exp))*(1 + self.chi*self.u_exp*dq[1]**(self.u - 2)) \
-    #         + two_tau*(q[2] - 2*q[1] + self.chi*(dq[1]**self.u_exp - q[1]**self.u_exp))*(2 + self.chi*self.u_exp*(q[1]**(self.u - 2) + dq[1]**(self.u - 2)))
-        
-    #     p_out[2:-2] = p[2:-2] \
-    #         + two_tau*(dq2n - dq2np1 + self.chi*(dq2n**self.u_exp - dq2np1**self.u_exp))*(1+self.chi*self.u_exp*dq2n**(self.u - 2)) \
-    #         + two_tau*(dq2n - dq2nm1 + self.chi*(dq2n**self.u_exp - dq2nm1**self.u_exp))*(2 + self.chi*self.u_exp*(dq2nm1**(self.u - 2) + dq2n**(self.u - 2))) \
-    #         + two_tau*(dq2nm2 - dq2nm1 + self.chi*(dq2nm2**self.u_exp - dq2nm1**self.u_exp))*(1 + self.chi*self.u_exp*dq2nm1**(self.u - 2))
-    #     p_out[-2] = p[-2] \
-    #         + two_tau*(q[-3] - 2*q[-2] + self.chi*((-q[-2])**self.u_exp - dq[-2]**self.u_exp))*(2 + self.chi*self.u_exp*(dq[-2]**(self.u - 2) + (-q[-2])**(self.u - 2))) \
-    #         + two_tau*(dq[-3] - dq[-2] + self.chi*(dq[-3]**self.u_exp - dq[-2]**self.u_exp))*(1 + self.chi*self.u_exp*dq[-2]**(self.u - 2))
-
-    #     return p_out, q
     def C_stage(self, p, q, dt):
         p_out = np.zeros_like(p)
         two_tau = -self.g * dt**3
