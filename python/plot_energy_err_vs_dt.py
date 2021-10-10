@@ -17,15 +17,15 @@ rel_err_old = []
 rel_err_noc = []
 for filename in fn:
     with h5py.File(filename, "r") as df:
-        rel_err.append(calc_energy_error(df, E0, avg_time))
+        rel_err.append(calc_energy_error(df, avg_time))
 
 for filename in fn_old:
     with h5py.File(filename, "r") as df:
-        rel_err_old.append(calc_energy_error(df, E0, avg_time))
+        rel_err_old.append(calc_energy_error(df, avg_time))
 
 for filename in fn_nocorr:
     with h5py.File(filename, "r") as df:
-        rel_err_noc.append(calc_energy_error(df, E0, avg_time))
+        rel_err_noc.append(calc_energy_error(df, avg_time))
 rel_err = np.array(rel_err)
 rel_err_old = np.array(rel_err_old)
 rel_err_noc = np.array(rel_err_noc)

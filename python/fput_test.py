@@ -1,22 +1,24 @@
 """fput_test.py
 
-A simple script to compute the FPUT problem using the SABA2C method outlined in 
+A simple script to compute the SSH FPUT problem using the SABA2C method outlined in 
 
 Pace & Campbell, Chaos 29, 023132 (2019)
 
-Usage:
-    fput_test.py [--no-correction --dt=<dt>]
+adapted to include spring constants.
 
-Options:
-    --no-correction             Turn off SABA2C corrections
-    --dt=<dt>                   timestep [default: 0.1]
+Usage:
+    fput_test.py <config>
 
 """
-
+import sys
+from pathlib import Path
+from configparser import ConfigParser
 import numpy as np
 import h5py
-import matplotlib.pyplot as plt
-plt.style.use('prl')
+import utils
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SABA2C(object):
     g = (2-np.sqrt(3))/24.
@@ -95,11 +97,6 @@ class FPUT(SABA2C):
     def C_stage(self, p, q, dt):
         p_out = np.zeros_like(p)
         two_tau = -self.g * dt**3
-        # dq = q[1:] - q[0:-1]
-        # dq2n = dq[2:-1]
-        # dq2np1 = dq[3:]
-        # dq2nm1 = dq[1:-2]
-        # dq2nm2 = dq[0:-3]
 
         k2n = self.k[2:-1]
         k2np1 = self.k[3:]
@@ -146,7 +143,6 @@ def project_mode(p, q, mode):
 
     p_mode = 2*np.sum(p[1:-1]*np.sin(mode*n*np.pi/(N+1)))/(N+1)
     q_mode = 2*np.sum(q[1:-1]*np.sin(mode*n*np.pi/(N+1)))/(N+1)
-    #print("mode {:d}: p, q = {:f},{:f}".format(mode, p_mode, q_mode))
     basis_fn = np.zeros_like(q)
     basis_fn[1:-1] = np.sin(mode*n*np.pi/(N+1))
     return p_mode*basis_fn, q_mode*basis_fn
@@ -161,30 +157,29 @@ def hamiltonian(p, q, k, alpha):
     return H
 
 if __name__ == "__main__":
+    filename = Path(sys.argv[-1])
+    outbase = Path("data")
 
-    from docopt import docopt
+    config = ConfigParser()
+    config.read(str(filename))
+    logger.info('Running fput_test.py with the following parameters:')
+    logger.info(config.items('parameters'))
 
-    # parse arguments
-    args = docopt(__doc__)
-    dt = float(args['--dt'])
-    if args['--no-correction']:
-        correction=False
-    else:
-        correction=True
+    correction=config.getboolean('solver', 'correction')
+    time_reversal = config.getboolean('solver','time_reversal')
+    N = config.getint('solver','N')
+    dt = config.getfloat('solver', 'dt')
+    t_stop = config.getfloat('solver', 't_stop')
 
-    time_reversal = False
-    alpha = 0.25
-    N = 31
+    alpha = config.getfloat('parameters', 'alpha')
+    beta  = config.getfloat('parameters', 'beta')
+    ke = config.getfloat('parameters', 'ke')
+    ko = config.getfloat('parameters', 'ko')
     A = 1
     cadence = 100
-    omega_n = 1
-    period = 2*np.pi/omega_n
 
-    print("correction = ", correction)
-    outfilename = "fput_N{}_A{}_alpha{}_dt{}".format(N,A,alpha,dt)
-    if not correction:
-        outfilename +="_nocorrection"
-    outfilename += ".h5"
+    logger.info("correction = ", correction)
+    output_file_name = Path(filename.stem + '_output.h5')
     
     fput = FPUT(alpha, correction=correction)
 
@@ -195,33 +190,16 @@ if __name__ == "__main__":
     fput.k = k
     q[1:-1] = A*np.sin(np.pi*n/(N+1))
 
-    # plt.style.use('prl')
-    # plt.rcParams["figure.figsize"] = (10,8)
-    # plt.plot(q)
-    # plt.xlabel("n")
-    # plt.ylabel("q")
-    # plt.savefig("q_init.png",dpi=100)
-    # plt.clf()
     t = [0]
-    t_stop = 100*period
-    #dt = period/400
+
 
     e_1 = [calc_mode_energy(p,q,k,1,alpha)]
     e_2 = [calc_mode_energy(p,q,k,2,alpha)]
     e_tot = [hamiltonian(p,q,k, alpha)]
-    print("E init = {:7.5f}".format(e_tot[0]))
-    print("e_1[0] = {}".format(e_1[0]))
+    logger.info("E init = {:7.5f}".format(e_tot[0]))
+    logger.info("e_1[0] = {}".format(e_1[0]))
 
     iteration = 1
-    # fig,ax = plt.subplots()
-    # line, = ax.plot(q, label='total')
-    # p1,q1 = project_mode(p,q,1)
-    # line_m1, = ax.plot(q1, label='mode 1')
-    # ax.set_ylim(-1,1)
-    # ax.set_xlabel("n")
-    # ax.set_ylabel("q")
-    # ax.legend()
-    # fig.savefig("frames/snap_{:05d}.png".format(0))
     p_list = [p]
     q_list = [q]
     while t[-1] < t_stop:
@@ -233,26 +211,10 @@ if __name__ == "__main__":
         e_tot.append(hamiltonian(p,q,k,alpha))
         t.append(t[-1]+dt)
         if iteration % cadence == 0:
-            print("iteration: {:d} e_1 = {:5.2f} e_2 = {:5.2f}".format(iteration, e_1[-1], e_2[-1]))
-            # line.set_ydata(q)
-            # p1,q1 = project_mode(p,q,1)
-            # line_m1.set_ydata(q1)
-            # fig.canvas.draw()
-            # fig.savefig("frames/snap_{:05d}.png".format(iteration))
+            logger.info("iteration: {:d} e_1 = {:5.2f} e_2 = {:5.2f}".format(iteration, e_1[-1], e_2[-1]))
 
         iteration += 1
     
-    with h5py.File(outfilename,"w") as outfile:
-        outfile.create_group("state")
-        outfile.create_group("energies")
-        outfile.create_group("scales")
-        outfile['tasks/p'] = np.array(p_list)
-        outfile['tasks/q'] = np.array(q_list)
-        outfile['scales/t'] = np.array(t)
-        outfile['energies/e_1'] = np.array(e_1)
-        outfile['energies/e_2'] = np.array(e_2)
-        outfile['energies/e_tot'] = np.array(e_tot)
-
     if time_reversal:
         while t[-1] > 0:
             p,q = fput.step(p,q,-dt)
@@ -260,31 +222,16 @@ if __name__ == "__main__":
             e_2.append(calc_mode_energy(p,q,2,alpha))
             e_tot.append(hamiltonian(p,q,k,alpha))
             t.append(t[-1]-dt)
-        print("Ef/Ei - 1 = {:5.5e}".format(e_tot[-1]/e_tot[0]-1))
-        print("t final = {}".format(t[-1]))
+        logger.info("Ef/Ei - 1 = {:5.5e}".format(e_tot[-1]/e_tot[0]-1))
+        logger.info("t final = {}".format(t[-1]))
 
-    # line.set_ydata(q)
-    # fig.canvas.draw()
-    # fig.savefig("frames/snap_{:05d}.png".format(iteration))
+    # write data
+    with h5py.File(outbase/output_file_name,"w") as outfile:
+        outfile['tasks/p'] = np.array(p_list)
+        outfile['tasks/q'] = np.array(q_list)
+        outfile['scales/t'] = np.array(t)
+        outfile['energies/e_1'] = np.array(e_1)
+        outfile['energies/e_2'] = np.array(e_2)
+        outfile['energies/e_tot'] = np.array(e_tot)
 
-    # e_tot = np.array(e_tot)
-    # fig, ax = plt.subplots()
-    # ax.plot(t,e_1,label='mode 1')
-    # ax.plot(t,e_2,label='mode 2')
-    # ax.plot(t,e_tot,'k',alpha=0.4, label='total energy')
-    # plt.axvline(1.66e3, alpha=0.4)
-    # ax.set_xlabel("time")
-    # ax.set_ylabel("Energy")
-    # ax.legend(loc='upper right')
-    # plt.tight_layout()
-    # fig.savefig("energy_vs_time.png",dpi=400)
-    # plt.clf()
-    # fig, ax = plt.subplots()
-    # ax.plot(t,np.abs(e_tot/e_tot[0] -1))
-    # ax.axhline(0)
-    # ax.set_yscale('log')
-    # ax.set_xlabel(r"$t$")
-    # ax.set_ylabel(r"$E/E_0 - 1$")
-
-    # fig.savefig("energy_cons_vs_time.png",dpi=100)
-    print("final iteration = {:d} final time  = {:5.2f}".format(iteration, t[-1]))
+    logger.info("final iteration = {:d} final time  = {:5.2f}".format(iteration, t[-1]))

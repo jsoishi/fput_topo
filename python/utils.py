@@ -1,7 +1,19 @@
 import re
 import numpy as np
+import logging
+import sys
 
-def calc_energy_error(df, E0, avg_time = None):
+formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s :: %(message)s')
+rootlogger = logging.root
+rootlogger.setLevel(0)
+stdout_handler = logging.StreamHandler(sys.stdout)
+stdout_handler.setLevel('INFO')
+stdout_handler.setFormatter(formatter)
+rootlogger.addHandler(stdout_handler)
+
+
+def calc_energy_error(df, avg_time = None):
+    E0 = df['energies/e_tot'][0]
     rel_en_err = np.abs(df['energies/e_tot']/E0 - 1)
 
     if avg_time:
@@ -27,3 +39,23 @@ def parse_filename(fn):
         args[k] = v
 
     return args
+
+def efreq(H):
+    evals, evecs = np.linalg.eig(H)
+    indx = np.argsort(evals)
+    omega = np.sqrt(evals[indx])
+    
+    return omega, evecs[:,indx]
+
+def linear_operator(N, k1=1, k2=0.5, pbc=False):
+
+    off = np.zeros(N-1)
+    off[::2] = k1
+    off[1::2] = k2
+    H_1d = -(np.diag(-(k1+k2)*np.ones(N)) + np.diag(off,k=1) + np.diag(off,k=-1))
+
+    if pbc:
+        H_1d[0,-1] = -1
+        H_1d[-1,0] = -1
+        
+    return H_1d
