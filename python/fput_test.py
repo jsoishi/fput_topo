@@ -149,6 +149,8 @@ if __name__ == "__main__":
     dt = config.getfloat('solver', 'dt')
     t_stop = config.getfloat('solver', 't_stop')
 
+    ic_type = config.get('parameters', 'ic_type')
+    mode = config.getint('parameters', 'mode')
     alpha = config.getfloat('parameters', 'alpha')
     beta  = config.getfloat('parameters', 'beta')
     ke = config.getfloat('parameters', 'ke')
@@ -156,7 +158,6 @@ if __name__ == "__main__":
     A = 1
     cadence = 100
 
-    logger.info("correction = ", correction)
     output_file_name = Path(filename.stem + '_output.h5')
     
     fput = FPUT(alpha, correction=correction)
@@ -165,12 +166,25 @@ if __name__ == "__main__":
     q = np.zeros(N+2)
     p = np.zeros(N+2)
     k = np.ones(N+1)
+    # implement SSH chain
+    k[::2] = ke #even
+    k[1::2] = ko #odd
     fput.k = k
-    q[1:-1] = A*np.sin(np.pi*n/(N+1))
 
+    # initial conditions
+    logger.info("Running with {} initial conditions, mode = {}".format(ic_type, mode))
+    if ic_type == 'eigenmode':
+        H = utils.linear_operator(N, k1=ko, k2=ke)
+        omega, evecs = utils.efreq(H)
+        q[1:-1] = evecs[:,mode]
+    elif ic_type == 'sin':
+        q[1:-1] = A*np.sin(np.pi/(N+1) * mode * (1+np.arange(N)))
+        print(q)
+    else:
+        q[1:-1] = A*np.sin(np.pi*n/(N+1))
+
+    # data
     t = [0]
-
-
     e_1 = [calc_mode_energy(p,q,k,1,alpha)]
     e_2 = [calc_mode_energy(p,q,k,2,alpha)]
     e_tot = [hamiltonian(p,q,k, alpha)]
