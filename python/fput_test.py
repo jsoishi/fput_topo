@@ -103,27 +103,14 @@ class FPUT(SABA2C):
 
         return p_out, q
 
-def calc_mode_energy(p, q, k, mode, alpha):
+def calc_mode_energy(p, q, k, mode, alpha, eigenmode=None):
 
-    p_mode, q_mode = project_mode(p,q,mode)
-    
+    if eigenmode is not None:
+        p_mode, q_mode = utils.project_eigen_mode(p,q,mode, eigenmode)
+    else:
+        p_mode, q_mode = utils.project_sin_mode(p,q,mode)
                  
     return hamiltonian(p_mode, q_mode, k, alpha)
-
-def project_mode(p, q, mode):
-    # x_n = n dx
-    # L = (N+1) dx
-    # dx = L/(N+1)
-    # f_k = <k|f> = \int f(x) sin(k pi x/L) dx = \sum_n f_n sin(k pi n dx/(dx (N+1))) L/(N+1)
-    # f(x) = \Sum_k f_k sin(k pi x/L)
-    N = len(q)-2
-    n = np.arange(1,N+1)
-
-    p_mode = 2*np.sum(p[1:-1]*np.sin(mode*n*np.pi/(N+1)))/(N+1)
-    q_mode = 2*np.sum(q[1:-1]*np.sin(mode*n*np.pi/(N+1)))/(N+1)
-    basis_fn = np.zeros_like(q)
-    basis_fn[1:-1] = np.sin(mode*n*np.pi/(N+1))
-    return p_mode*basis_fn, q_mode*basis_fn
 
 def hamiltonian(p, q, k, alpha):
     pn = p[0:-1]
@@ -173,13 +160,16 @@ if __name__ == "__main__":
 
     # initial conditions
     logger.info("Running with {} initial conditions, mode = {}".format(ic_type, mode))
+
+    H = utils.linear_operator(N, k1=ko, k2=ke)
+    omega, evecs = utils.efreq(H)
+
     if ic_type == 'eigenmode':
-        H = utils.linear_operator(N, k1=ko, k2=ke)
-        omega, evecs = utils.efreq(H)
         q[1:-1] = evecs[:,mode]
     elif ic_type == 'sin':
-        q[1:-1] = A*np.sin(np.pi/(N+1) * mode * (1+np.arange(N)))
-        print(q)
+        q[1:-1] = A*np.sin(np.pi*mode*n/(N+1))
+    elif ic_type == 'sinp':
+        p[1:-1] = A*np.sin(np.pi*mode*n/(N+1))
     else:
         q[1:-1] = A*np.sin(np.pi*n/(N+1))
 
@@ -187,6 +177,9 @@ if __name__ == "__main__":
     t = [0]
     e_1 = [calc_mode_energy(p,q,k,1,alpha)]
     e_2 = [calc_mode_energy(p,q,k,2,alpha)]
+    e_1_emode = [calc_mode_energy(p,q,k,1,alpha,eigenmode=evecs)]
+    e_2_emode = [calc_mode_energy(p,q,k,2,alpha,eigenmode=evecs)]
+
     e_tot = [hamiltonian(p,q,k, alpha)]
     logger.info("E init = {:7.5f}".format(e_tot[0]))
     logger.info("e_1[0] = {}".format(e_1[0]))
@@ -200,6 +193,9 @@ if __name__ == "__main__":
         q_list.append(q)
         e_1.append(calc_mode_energy(p,q,k,1,alpha))
         e_2.append(calc_mode_energy(p,q,k,2,alpha))
+        e_1_emode.append(calc_mode_energy(p,q,k,1,alpha,eigenmode=evecs))
+        e_2_emode.append(calc_mode_energy(p,q,k,2,alpha,eigenmode=evecs))
+        
         e_tot.append(hamiltonian(p,q,k,alpha))
         t.append(t[-1]+dt)
         if iteration % cadence == 0:
@@ -224,6 +220,8 @@ if __name__ == "__main__":
         outfile['scales/t'] = np.array(t)
         outfile['energies/e_1'] = np.array(e_1)
         outfile['energies/e_2'] = np.array(e_2)
+        outfile['energies/e_1_emode'] = np.array(e_1_emode)
+        outfile['energies/e_2_emode'] = np.array(e_2_emode)
         outfile['energies/e_tot'] = np.array(e_tot)
 
     logger.info("final iteration = {:d} final time  = {:5.2f}".format(iteration, t[-1]))

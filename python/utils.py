@@ -59,3 +59,47 @@ def linear_operator(N, k1=1, k2=0.5, pbc=False):
         H_1d[-1,0] = -1
         
     return H_1d
+
+def project_sin_mode(p, q, mode):
+    """projects p, q onto a single mode.
+
+    Assume discretized lattice such that
+    x_n = n dx
+    L = (N+1) dx
+    dx = L/(N+1)
+
+    then can project onto a mode amplitude via
+    f_mode = <mode|f> = \int f(x) sin(mode pi x/L) dx = \sum_n f_n sin(mode pi n dx/(dx (N+1))) L/(N+1)
+
+    and then returns the single mode in lattice space
+    f_n = f_mode sin(mode pi n/(N+1))
+
+    """
+    N = len(q)-2
+    n = np.arange(1,N+1)
+    basis_fn = np.zeros_like(q)
+    basis_fn[1:-1] = np.sin(mode*n*np.pi/(N+1))
+    p_mode = 2*inner_product(p[1:-1], basis_fn[1:-1])/(N+1)
+    q_mode = 2*inner_product(q[1:-1], basis_fn[1:-1])/(N+1)
+
+    return p_mode*basis_fn, q_mode*basis_fn
+
+def inner_product(a, b):
+    return (a*b).sum()
+
+def project_eigen_mode(p, q, mode, evecs):
+    N = len(q) - 2
+    basis_fn = np.zeros_like(q)
+    basis_fn[1:-1] = evecs[:,mode]
+    
+    p_mode = 2*inner_product(p[1:-1], basis_fn[1:-1])/(N+1)
+    q_mode = 2*inner_product(q[1:-1], basis_fn[1:-1])/(N+1)
+
+    return p_mode*basis_fn, q_mode*basis_fn
+
+def eigenmode_transform(p, q, evecs):
+    p_hat = evecs.T@p
+    q_hat = evecs.T@q
+
+    return p_hat, q_hat
+        
