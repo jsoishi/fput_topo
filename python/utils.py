@@ -90,7 +90,8 @@ def inner_product(a, b):
 def project_eigen_mode(p, q, mode, evecs):
     N = len(q) - 2
     basis_fn = np.zeros_like(q)
-    basis_fn[1:-1] = evecs[:,mode]
+    n = mode - 1 # ground state is not constant
+    basis_fn[1:-1] = evecs[:,n]
     
     p_mode = 2*inner_product(p[1:-1], basis_fn[1:-1])/(N+1)
     q_mode = 2*inner_product(q[1:-1], basis_fn[1:-1])/(N+1)
