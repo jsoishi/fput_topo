@@ -226,8 +226,11 @@ if __name__ == "__main__":
     if time_reversal:
         while t[-1] > 0:
             p,q = fput.step(p,q,-dt)
-            e_1.append(calc_mode_energy(p,q,1,alpha))
-            e_2.append(calc_mode_energy(p,q,2,alpha))
+            e_1.append(calc_mode_energy(p,q,k,1,alpha))
+            e_2.append(calc_mode_energy(p,q,k,2,alpha))
+            e_1_emode.append(calc_mode_energy(p,q,k,1,alpha,eigenmode=evecs))
+            e_2_emode.append(calc_mode_energy(p,q,k,2,alpha,eigenmode=evecs))
+            
             e_tot.append(hamiltonian(p,q,k,alpha))
             t.append(t[-1]-dt)
         logger.info("Ef/Ei - 1 = {:5.5e}".format(e_tot[-1]/e_tot[0]-1))
