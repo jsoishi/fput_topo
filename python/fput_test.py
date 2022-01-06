@@ -195,9 +195,8 @@ if __name__ == "__main__":
 
     t_current = 0.
     iteration = 1
-    p_list = [p]
-    q_list = [q]
-
+    p_list = [p.copy()]
+    q_list = [q.copy()]
     t = [t_current]
 
 
@@ -209,8 +208,8 @@ if __name__ == "__main__":
 
         if iteration % analysis_cadence == 0:
             t.append(t_current)
-            p_list.append(p)
-            q_list.append(q)
+            p_list.append(p.copy())
+            q_list.append(q.copy())
             e_1.append(calc_mode_energy(p,q,k,1,alpha))
             e_2.append(calc_mode_energy(p,q,k,2,alpha))
             e_1_emode.append(calc_mode_energy(p,q,k,1,alpha,eigenmode=evecs))
@@ -236,7 +235,6 @@ if __name__ == "__main__":
         logger.info("Ef/Ei - 1 = {:5.5e}".format(e_tot[-1]/e_tot[0]-1))
         logger.info("t final = {}".format(t[-1]))
     time_reversal_time = time.time()
-
     logger.info("main loop time = {:10.5e}".format(main_loop_time - start_time))
     # write data
     with h5py.File(outbase/output_file_name,"w") as outfile:
