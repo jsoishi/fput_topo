@@ -2,6 +2,7 @@ import re
 import numpy as np
 import logging
 import sys
+import h5py
 
 formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s :: %(message)s')
 rootlogger = logging.root
@@ -11,6 +12,20 @@ stdout_handler.setLevel('INFO')
 stdout_handler.setFormatter(formatter)
 rootlogger.addHandler(stdout_handler)
 
+class fput_run:
+    def __init__(self, filename):
+        self.fn = filename
+        df = h5py.File(self.fn, "r")
+        self.p = df['tasks/p'][:]
+        self.q = df['tasks/q'][:]
+        self.t = df['scales/t'][:]
+
+        self.e_tot = df['energies/e_tot'][:]
+        self.e_1 = df['energies/e_1'][:]
+        self.e_2 = df['energies/e_2'][:]
+        self.e_1_emode = df['energies/e_1_emode'][:]
+        self.e_2_emode = df['energies/e_2_emode'][:]
+        df.close()
 
 def calc_energy_error(df, avg_time = None):
     E0 = df['energies/e_tot'][0]
